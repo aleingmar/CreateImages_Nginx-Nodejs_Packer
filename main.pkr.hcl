@@ -14,16 +14,41 @@ packer {
   }
 }
 
+#######################################################################################################################
+# Variables de la plantilla
 
-# Variables externas
-variable "aws_access_key" {}
-variable "aws_secret_key" {}
-variable "aws_session_token" {}
-variable "aws_region" {}
-variable "ami_name" {}
-variable "instance_type" {}
-variable "project_name" {}
-variable "environment" {}
+variable "aws_region" {
+  description = "Región de AWS"
+}
+
+variable "ami_name" {
+  description = "Nombre de la AMI generada"
+}
+
+variable "instance_type" {
+  description = "Tipo de instancia de AWS"
+}
+
+variable "project_name" {
+  description = "Nombre del proyecto"
+}
+
+variable "environment" {
+  description = "Entorno del proyecto (dev, test, prod)"
+}
+
+variable "aws_access_key" {
+  description = "Clave de acceso de AWS"
+}
+
+variable "aws_secret_key" {
+  description = "Clave secreta de AWS"
+}
+
+variable "aws_session_token" {
+  description = "Token de sesión de AWS"
+}
+
 ##########################################################################################################
 # BUILDER: Define cómo se construye la AMI en AWS
 # source{}--> define el sistema base sobre el que quiero crear la imagen (ISO ubuntu) y el proveeedor para el que creamos la imagen 
@@ -35,9 +60,9 @@ source "amazon-ebs" "aws_builder" {
   # token         = var.aws_session_token
   # region        = var.aws_region
   #variables de entorno (estan en mi host)
-  access_key    = "${env("AWS_ACCESS_KEY")}"
-  secret_key    = "${env("AWS_SECRET_KEY")}"
-  token         = "${env("AWS_SESSION_TOKEN")}"
+  access_key    = var.aws_access_key
+  secret_key    = var.aws_secret_key
+  token         = var.aws_session_token
   region        = var.aws_region
   ## OPCION 1 --> Seleccionar una AMI específica
   #source_ami = "ami-095a8f574cb0ac0d0" # AMI de Ubuntu 20.04 LTS
@@ -56,7 +81,9 @@ source "amazon-ebs" "aws_builder" {
 
   instance_type = var.instance_type # Instancia recomendada para AMIs de Ubuntu (t2.micro), esta en el fichero de variables
   ssh_username  = "ubuntu"    # Usuario predeterminado en AMIs de Ubuntu
-  ami_name      = "${var.ami_name}-${timestamp()}"
+  #ami_name      = "${var.ami_name}-${timestamp()}"
+  ami_name = "Actividad_Node_Nginx_AMI"
+
 }
 
 
@@ -95,8 +122,8 @@ build {
 
 ####################################################################################################
 ##### PASOS PARA EJECUTAR
-# packer init -var-file=variables/variables.hcl main.pkr.hcl, descarga los plugins necesarios
-# packer validate -var-file=variables/variables.hcl main.pkr.hcl , VERIFICA SINTAXIS DE LA PLANTILLA
+# packer init main.pkr.hcl, descarga los plugins necesarios
+# packer validate -var-file="variables/variables.hcl" main.pkr.hcl , VERIFICA SINTAXIS DE LA PLANTILLA
 # packer inspect -var-file=variables/variables.hcl main.pkr.hcl, MUESTRA LA CONFIGURACIÓN DE LA PLANTILLA
 
 # packer build -var-file=variables/variables.hcl main.pkr.hcl, GENERA LA IMAGEN A PARTIR DE LA PLANTILLA
