@@ -60,7 +60,7 @@ source "amazon-ebs" "aws_builder" {
 }
 
 
-########################################################################################################################
+#######################################################################################################################
 # PROVISIONERS: Configura el sistema operativo y la aplicación
 # build{}: Describe cómo se construirá la imagen --> Definir los provisioners para instalar y configurar software
 build {
