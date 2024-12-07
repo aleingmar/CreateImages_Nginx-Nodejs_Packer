@@ -123,7 +123,7 @@ build {
 ####################################################################################################
 ##### PASOS PARA EJECUTAR
 # packer init main.pkr.hcl, descarga los plugins necesarios
-# packer validate -var-file="variables/variables.hcl" main.pkr.hcl , VERIFICA SINTAXIS DE LA PLANTILLA
+# packer validate -var "aws_access_key=$env:PKR_VAR_aws_access_key" `  -var "aws_secret_key=$env:PKR_VAR_aws_secret_key" `  -var "aws_session_token=$env:PKR_VAR_aws_session_token" `  -var-file="variables/variables.pkrvars.hcl" main.pkr.hcl, VERIFICA SINTAXIS DE LA PLANTILLA
 # packer inspect -var-file=variables/variables.hcl main.pkr.hcl, MUESTRA LA CONFIGURACIÓN DE LA PLANTILLA
 
 # packer build -var-file=variables/variables.hcl main.pkr.hcl, GENERA LA IMAGEN A PARTIR DE LA PLANTILLA
