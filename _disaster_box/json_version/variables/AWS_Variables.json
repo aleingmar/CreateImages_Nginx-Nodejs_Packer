@@ -1,0 +1,15 @@
+// Propósito:
+// Este archivo contiene las variables específicas para tu proveedor de nube (AWS en este caso).
+// Centraliza información como las credenciales de acceso, la región, el tipo de instancia y el nombre de la AMI.
+
+// Por qué es necesario:
+// Permite reutilizar valores en diferentes plantillas y mantener las credenciales separadas del código principal (mejor práctica).
+
+{
+    "aws_access_key": "TUS_CREDENCIALES_AWS_ACCESS_KEY",
+    "aws_secret_key": "TUS_CREDENCIALES_AWS_SECRET_KEY",
+    "aws_region": "us-east-1",
+    "ami_name": "Actividad_Node_Nginx_AMI",
+    "instance_type": "t2.micro"
+  }
+  

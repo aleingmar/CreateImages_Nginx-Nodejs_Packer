@@ -1,0 +1,6 @@
+{
+    "variables": {
+      "project_name": "Actividad Packer AWS",
+      "environment": "dev"
+    }
+  }
