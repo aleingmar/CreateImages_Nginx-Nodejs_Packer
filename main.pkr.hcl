@@ -17,37 +17,15 @@ packer {
 #######################################################################################################################
 # Variables de la plantilla
 
-variable "aws_region" {
-  description = "Región de AWS"
-}
-
-variable "ami_name" {
-  description = "Nombre de la AMI generada"
-}
-
-variable "instance_type" {
-  description = "Tipo de instancia de AWS"
-}
-
-variable "project_name" {
-  description = "Nombre del proyecto"
-}
-
-variable "environment" {
-  description = "Entorno del proyecto (dev, test, prod)"
-}
-
-variable "aws_access_key" {
-  description = "Clave de acceso de AWS"
-}
-
-variable "aws_secret_key" {
-  description = "Clave secreta de AWS"
-}
-
-variable "aws_session_token" {
-  description = "Token de sesión de AWS"
-}
+variable "aws_region" { description = "Región de AWS" }
+variable "ami_name" { description = "Nombre de la AMI generada" }
+variable "instance_type" { description = "Tipo de instancia de AWS" }
+variable "project_name" { description = "Nombre del proyecto" }
+variable "environment" { description = "Entorno del proyecto (dev, test, prod)" }
+# Credenciales de AWS
+variable "aws_access_key" { description = "Clave de acceso de AWS" }
+variable "aws_secret_key" { description = "Clave secreta de AWS" }
+variable "aws_session_token" { description = "Token de sesión de AWS" }
 
 ##########################################################################################################
 # BUILDER: Define cómo se construye la AMI en AWS
@@ -55,15 +33,11 @@ variable "aws_session_token" {
 # (tecnologia con la que desplegará la imagen) --> AMAZON
 source "amazon-ebs" "aws_builder" {
   #variables importadas del fichero de variables
-  # access_key    = var.aws_access_key
-  # secret_key    = var.aws_secret_key
-  # token         = var.aws_session_token
-  # region        = var.aws_region
-  #variables de entorno (estan en mi host)
   access_key    = var.aws_access_key
   secret_key    = var.aws_secret_key
   token         = var.aws_session_token
   region        = var.aws_region
+
   ## OPCION 1 --> Seleccionar una AMI específica
   #source_ami = "ami-095a8f574cb0ac0d0" # AMI de Ubuntu 20.04 LTS
 
@@ -82,7 +56,7 @@ source "amazon-ebs" "aws_builder" {
   instance_type = var.instance_type # Instancia recomendada para AMIs de Ubuntu (t2.micro), esta en el fichero de variables
   ssh_username  = "ubuntu"    # Usuario predeterminado en AMIs de Ubuntu
   #ami_name      = "${var.ami_name}-${timestamp()}"
-  ami_name = "Actividad_Node_Nginx_AMI"
+  ami_name = var.ami_name
 
 }
 
@@ -91,33 +65,36 @@ source "amazon-ebs" "aws_builder" {
 # PROVISIONERS: Configura el sistema operativo y la aplicación
 # build{}: Describe cómo se construirá la imagen --> Definir los provisioners para instalar y configurar software
 build {
-  name    = "aws-node-nginx"
-  sources = ["source.amazon-ebs.aws_builder"]
+  name    = "aws-node-nginx"                        # Nombre del proceso de construcción
+  sources = ["source.amazon-ebs.aws_builder"]       # Especifica el builder que utilizará esta configuración
 
-  provisioner "shell" {
+  # Primer provisioner: ejecuta comandos de shell en la instancia
+  provisioner "shell" {                             
     inline = [
-      "sudo apt update -y",
-      "sudo apt install -y nginx",
-      "curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -",
-      "sudo apt install -y nodejs build-essential",
-      "sudo npm install pm2@latest -g",
-      "sudo ufw allow 'Nginx Full'",
-      "sudo systemctl enable nginx"
+      "sudo apt update -y",                         # Actualiza la lista de paquetes
+      "sudo apt install -y nginx",                 # Instala el servidor web Nginx
+      "curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -", # Configura el repositorio para instalar Node.js 14
+      "sudo apt install -y nodejs build-essential", # Instala Node.js y herramientas de construcción esenciales
+      "sudo npm install pm2@latest -g",            # Instala PM2 globalmente para gestionar procesos Node.js
+      "sudo ufw allow 'Nginx Full'",               # Configura el firewall para permitir tráfico HTTP y HTTPS para Nginx
+      "sudo systemctl enable nginx"                # Habilita el servicio Nginx para que se inicie automáticamente
     ]
   }
 
-  provisioner "file" {
-    source      = "provisioners/app.js"
-    destination = "/home/ubuntu/app.js"
+  # Segundo provisioner: transfiere un archivo desde el host a la instancia
+  provisioner "file" {                              
+    source      = "provisioners/app.js"            # Ruta del archivo en el host
+    destination = "/home/ubuntu/app.js"            # Ruta de destino en la instancia
   }
 
-  provisioner "shell" {
+  # Tercer provisioner: configura la aplicación Node.js con PM2
+  provisioner "shell" {                             
     inline = [
-      "pm2 start /home/ubuntu/app.js",
-      "pm2 save",
-      "pm2 startup"
+      "sudo pm2 start /home/ubuntu/app.js || true", # Inicia la aplicación con PM2; ignora errores previos con `|| true`
+      "sudo pm2 save",                              # Guarda el estado actual de los procesos en PM2
+      "sudo pm2 startup systemd --hp /home/ubuntu --user ubuntu --path $PATH || true" # Configura PM2 para iniciar automáticamente al reiniciar el sistema
     ]
-  }
+}
 }
 
 ####################################################################################################
@@ -126,5 +103,5 @@ build {
 # packer validate -var "aws_access_key=$env:PKR_VAR_aws_access_key" `  -var "aws_secret_key=$env:PKR_VAR_aws_secret_key" `  -var "aws_session_token=$env:PKR_VAR_aws_session_token" `  -var-file="variables/variables.pkrvars.hcl" main.pkr.hcl, VERIFICA SINTAXIS DE LA PLANTILLA
 # packer inspect -var-file=variables/variables.hcl main.pkr.hcl, MUESTRA LA CONFIGURACIÓN DE LA PLANTILLA
 
-# packer build -var-file=variables/variables.hcl main.pkr.hcl, GENERA LA IMAGEN A PARTIR DE LA PLANTILLA
+# packer build -var "aws_access_key=$env:PKR_VAR_aws_access_key" `  -var "aws_secret_key=$env:PKR_VAR_aws_secret_key" `  -var "aws_session_token=$env:PKR_VAR_aws_session_token" `  -var-file="variables/variables.pkrvars.hcl" main.pkr.hcl, GENERA LA IMAGEN A PARTIR DE LA PLANTILLA
 
