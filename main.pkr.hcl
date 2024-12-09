@@ -88,13 +88,12 @@ build {
   }
 
   # Tercer provisioner: configura la aplicación Node.js con PM2 (gestor de procesos de Node.js)
-   provisioner "shell" {
+  provisioner "shell" {
     inline = [
-      "sudo pm2 start /home/ubuntu/app.js",               # Inicia la aplicación con PM2
-      "sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u ubuntu --hp /home/ubuntu", # Configura PM2 para iniciar al arranque
-      "sudo pm2 save",                                    # Guarda el estado actual en PM2
-      "sudo systemctl start pm2-ubuntu",                 # Inicia el servicio PM2
-      "sudo systemctl status pm2-ubuntu || true"         # Verifica el estado del servicio (opcional, no interrumpirá si falla)
+      "sudo pm2 start /home/ubuntu/app.js",               # Inicia la aplicación como root
+      "sudo env PATH=$PATH:/usr/bin pm2 startup systemd --hp /root", # Configura PM2 para autoarranque como root
+      "sudo pm2 save",                                    # Guarda el estado de PM2 en /root/.pm2/dump.pm2
+      "sudo cp /root/.pm2/dump.pm2 /etc/pm2-dump.pm2 || true" # Copia el dump a una ubicación segura (opcional)
     ]
   }
 
@@ -130,15 +129,3 @@ build {
 
 # packer build -var "aws_access_key=$env:PKR_VAR_aws_access_key" `  -var "aws_secret_key=$env:PKR_VAR_aws_secret_key" `  -var "aws_session_token=$env:PKR_VAR_aws_session_token" `  -var-file="variables/variables.pkrvars.hcl" main.pkr.hcl, GENERA LA IMAGEN A PARTIR DE LA PLANTILLA
 
-
-  #  provisioner "shell" {
-  #   inline = [
-  #     "sudo mkdir -p /home/ubuntu/.pm2",                           # Asegura que el directorio de PM2 existe
-  #     "sudo chown -R ubuntu:ubuntu /home/ubuntu/.pm2", # Cambia la propiedad de los archivos de PM2 al usuario ubuntu
-  #     "sudo -u ubuntu pm2 start /home/ubuntu/app.js",               # Inicia la aplicación con PM2
-  #     "sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u ubuntu --hp /home/ubuntu", # Configura PM2 para iniciar al arranque
-  #     "sudo -u ubuntu pm2 save",                                    # Guarda el estado actual en PM2
-  #     "sudo systemctl start pm2-ubuntu",                 # Inicia el servicio PM2
-  #     "sudo systemctl status pm2-ubuntu || true"         # Verifica el estado del servicio (opcional, no interrumpirá si falla)
-  #   ]
-  # }
