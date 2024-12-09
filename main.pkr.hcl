@@ -87,15 +87,40 @@ build {
     destination = "/home/ubuntu/app.js"            # Ruta de destino en la instancia
   }
 
-  # Tercer provisioner: configura la aplicación Node.js con PM2
-  provisioner "shell" {                             
+  # Tercer provisioner: configura la aplicación Node.js con PM2 (gestor de procesos de Node.js)
+   provisioner "shell" {
     inline = [
-      "sudo pm2 start /home/ubuntu/app.js || true", # Inicia la aplicación con PM2; ignora errores previos con `|| true`
-      "sudo pm2 save",                              # Guarda el estado actual de los procesos en PM2
-      "sudo pm2 startup systemd --hp /home/ubuntu --user ubuntu --path $PATH || true" # Configura PM2 para iniciar automáticamente al reiniciar el sistema
+      "sudo pm2 start /home/ubuntu/app.js",               # Inicia la aplicación con PM2
+      "sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u ubuntu --hp /home/ubuntu", # Configura PM2 para iniciar al arranque
+      "sudo pm2 save",                                    # Guarda el estado actual en PM2
+      "sudo systemctl start pm2-ubuntu",                 # Inicia el servicio PM2
+      "sudo systemctl status pm2-ubuntu || true"         # Verifica el estado del servicio (opcional, no interrumpirá si falla)
     ]
+  }
+
+  ### Provisioners (4 y 5) para configurar Nginx como proxy inverso
+
+  # Cuarto provisioner: Copiar el archivo de configuración de Nginx al servidor
+  provisioner "file" {
+    source      = "provisioners/nginx_default.conf"
+    destination = "/tmp/nginx_default"
+  }
+
+  # Quinto provisioner:Configuración de Nginx como proxy inverso y validación
+  provisioner "shell" {
+    inline = [
+      # Copia la configuración de Nginx
+      "sudo cp /tmp/nginx_default /etc/nginx/sites-available/default",
+      # Prueba la configuración de Nginx
+      "sudo nginx -t",
+      # Reinicia el servicio de Nginx
+      "sudo systemctl restart nginx",
+      # Valida que el servidor está funcionando
+      "curl -I localhost"
+    ]
+  }
 }
-}
+
 
 ####################################################################################################
 ##### PASOS PARA EJECUTAR
@@ -105,3 +130,15 @@ build {
 
 # packer build -var "aws_access_key=$env:PKR_VAR_aws_access_key" `  -var "aws_secret_key=$env:PKR_VAR_aws_secret_key" `  -var "aws_session_token=$env:PKR_VAR_aws_session_token" `  -var-file="variables/variables.pkrvars.hcl" main.pkr.hcl, GENERA LA IMAGEN A PARTIR DE LA PLANTILLA
 
+
+  #  provisioner "shell" {
+  #   inline = [
+  #     "sudo mkdir -p /home/ubuntu/.pm2",                           # Asegura que el directorio de PM2 existe
+  #     "sudo chown -R ubuntu:ubuntu /home/ubuntu/.pm2", # Cambia la propiedad de los archivos de PM2 al usuario ubuntu
+  #     "sudo -u ubuntu pm2 start /home/ubuntu/app.js",               # Inicia la aplicación con PM2
+  #     "sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u ubuntu --hp /home/ubuntu", # Configura PM2 para iniciar al arranque
+  #     "sudo -u ubuntu pm2 save",                                    # Guarda el estado actual en PM2
+  #     "sudo systemctl start pm2-ubuntu",                 # Inicia el servicio PM2
+  #     "sudo systemctl status pm2-ubuntu || true"         # Verifica el estado del servicio (opcional, no interrumpirá si falla)
+  #   ]
+  # }

@@ -16,6 +16,13 @@ No necesitas abrir la aplicación gráfica de VirtualBox porque todo se realiza 
 - Creación Automática de la VM:
 Cuando ejecutas packer build, Packer inicia una instancia de VirtualBox, crea la máquina virtual, y realiza el provisioning automáticamente.
 
+### ¿Qué se espera después de ejecutar Packer con un builder de AWS?
+En tu caso, se crea una AMI basada en los pasos de configuración definidos en la plantilla de Packer. Una AMI es una imagen de máquina que incluye:
+
+El sistema operativo (en tu caso, Ubuntu 20.04).
+Todo el software instalado y configurado (Nginx, Node.js, PM2, etc.).
+Cualquier personalización que hayas definido en los provisioners de Packer.
+La instancia creada durante el proceso es temporal. Packer usa esta instancia para aplicar los provisioners (instalaciones y configuraciones) y luego genera una AMI con el resultado final. Una vez creada la AMI, la instancia es terminada automáticamente.
 
 ### NOTAS SUELTAS
 - AMI: Amazon machine image 
