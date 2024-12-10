@@ -83,7 +83,7 @@ build {
 
   # Segundo provisioner: transfiere un archivo desde el host a la instancia
   provisioner "file" {                              
-    source      = "provisioners/app.js"            # Ruta del archivo en el host
+    source      = "../packer/provisioners/app.js"            # Ruta del archivo en el host
     destination = "/home/ubuntu/app.js"            # Ruta de destino en la instancia
   }
 
@@ -101,7 +101,7 @@ build {
 
   # Cuarto provisioner: Copiar el archivo de configuración de Nginx al servidor
   provisioner "file" {
-    source      = "provisioners/nginx_default.conf"
+    source      = "../packer/provisioners/nginx_default.conf"
     destination = "/tmp/nginx_default"
   }
 

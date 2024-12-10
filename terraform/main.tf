@@ -15,18 +15,12 @@ provider "aws" {
 # y generar la AMI basada en el archivo de configuración de Packer (main.pkr.hcl).
 resource "null_resource" "packer_ami" {
   provisioner "local-exec" {
-    command = <<EOT
-      packer build \
-        -var "aws_access_key=${var.aws_access_key}" \
-        -var "aws_secret_key=${var.aws_secret_key}" \
-        -var "aws_session_token=${var.aws_session_token}" \
-        -var "aws_region=${var.aws_region}" \
-        -var "ami_name=${var.ami_name}" \
-        -var-file="../packer/variables.pkrvars.hcl" \ # Archivo de variables
-        ../packer/main.pkr.hcl
-    EOT
+    command = "packer build -var aws_access_key=${var.aws_access_key} -var aws_secret_key=${var.aws_secret_key} -var aws_session_token=${var.aws_session_token} -var-file=..\\packer\\variables.pkrvars.hcl ..\\packer\\main.pkr.hcl"
   }
 }
+
+
+
 
 ####################################################################################################
 
@@ -34,6 +28,7 @@ resource "null_resource" "packer_ami" {
 # Este bloque obtiene la AMI más reciente creada por el recurso anterior.
 # Filtra las AMIs basadas en el nombre de la AMI y el propietario (self indica el usuario actual).
 data "aws_ami" "latest_ami" {
+  depends_on = [null_resource.packer_ami] # Asegura que este bloque espere la creación de la AMI
   most_recent = true # Selecciona la AMI más reciente.
   filter {
     name   = "name" # Filtro por nombre.
@@ -41,6 +36,8 @@ data "aws_ami" "latest_ami" {
   }
   owners = ["self"] # Solo busca AMIs creadas por el propietario actual.
 }
+
+
 # RECURSO PARA RECUPERAR LA VPC POR DEFECTO
 data "aws_vpc" "default" {
   default = true
@@ -147,5 +144,5 @@ output "public_ip" {
 # DESPLEGAR TERRAFORM
 # terraform init --> Inicializa el directorio de trabajo
 # terraform plan -var "aws_access_key=$env:PKR_VAR_aws_access_key" `  -var "aws_secret_key=$env:PKR_VAR_aws_secret_key" `  -var "aws_session_token=$env:PKR_VAR_aws_session_token" --> Muestra los cambios que se realizarán
-# terraform apply --> Aplica los cambios y despliega la infraestructura
+# terraform apply -var "aws_access_key=$env:PKR_VAR_aws_access_key" `  -var "aws_secret_key=$env:PKR_VAR_aws_secret_key" `  -var "aws_session_token=$env:PKR_VAR_aws_session_token"--> Aplica los cambios y despliega la infraestructura
 # terraform destroy --> Elimina la infraestructura creada
