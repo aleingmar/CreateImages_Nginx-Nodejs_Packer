@@ -42,16 +42,27 @@ data "aws_vpc" "default" {
 ####################################################################################################
 # CONFIGURACIÓN DEL GRUPO DE SEGURIDAD PARA LA INSTANCIA EC2
 ####################################################################################################
+# Intentar buscar un grupo de seguridad existente basado en su nombre y VPC.
+data "aws_security_group" "existing_sg" {
+  # Filtro para buscar un grupo de seguridad por su nombre.
+  filter {
+    name   = "group-name"
+    values = ["${var.instance_name}-sg"] # Nombre basado en la variable `instance_name`.
+  }
+  # Filtro para asegurarse de que pertenece a la VPC predeterminada.
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id] # ID de la VPC predeterminada.
+  }
+
+}
 resource "aws_security_group" "web_server_sg" {
+  # Crear un nuevo grupo de seguridad solo si no existe uno con el nombre especificado.
+  count = try(data.aws_security_group.existing_sg.id != "", false) ? 0 : 1 # Condición para crear o no el recurso. (si no existe count=1, se crea uno nuevo), try es para que no falle si no hay
   name        = "${var.instance_name}-sg" # El nombre del grupo de seguridad se basa en el nombre de la instancia.
   description = "Grupo de seguridad para la instancia EC2" # Descripción del grupo.
   vpc_id      = data.aws_vpc.default.id  # Asocia este grupo de seguridad a la VPC predeterminada.
-
-  lifecycle {
-    prevent_destroy = false              # Permite destruir el recurso si es necesario.
-    ignore_changes  = [name]             # Ignora los cambios en el nombre para evitar reprovisionamiento innecesario.
-  }
-
+  
   #ingress --> trafico de entrada
   #egrress --> trafico de salida
   # Reglas de ingreso para permitir tráfico HTTP.
@@ -100,7 +111,9 @@ resource "aws_instance" "web_server" {
   ami                   = data.aws_ami.latest_ami.id # Usa la AMI más reciente creada con Packer.
   instance_type         = var.instance_type          # Define el tipo de instancia basado en la variable `instance_type`.
   key_name              = var.key_name               # Especifica la clave SSH para acceso remoto.
-  vpc_security_group_ids = [aws_security_group.web_server_sg.id] # Asocia el grupo de seguridad configurado.
+  #vpc_security_group_ids = [aws_security_group.web_server_sg.id] # Asocia el grupo de seguridad configurado.
+  # Referencia correcta al grupo de seguridad configurado.
+  vpc_security_group_ids = length(aws_security_group.web_server_sg) > 0 ? [aws_security_group.web_server_sg[0].id] : [data.aws_security_group.existing_sg.id]
 
   tags = {
     Name = var.instance_name # Etiqueta la instancia con el nombre especificado en la variable.
@@ -144,3 +157,4 @@ output "public_ip" {
 # terraform destroy -var "aws_access_key=$env:PKR_VAR_aws_access_key" `  -var "aws_secret_key=$env:PKR_VAR_aws_secret_key" `  -var "aws_session_token=$env:PKR_VAR_aws_session_token" --> Elimina la infraestructura creada
 
 
+# Get-ChildItem Env: | Where-Object { $_.Name -like "PKR_VAR_*" } --> ver credenciales actuales en la consola de powershell
