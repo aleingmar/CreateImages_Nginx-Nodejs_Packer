@@ -122,7 +122,10 @@ build {
 
 
 ####################################################################################################
-##### PASOS PARA EJECUTAR
+##### IMPORTANTE para automatizar el proceso de despliegue con Terraform, he cambiado las direcciones 
+# de los archivos provisioners/app.js y provisioners/nginx_default.conf a sus rutas relativas desde el punto de vista del main.tf (../packer/provisioners/)
+
+##### PASOS PARA EJECUTAR (EN WINDOWS, desde la carpeta packer, solo la creacion de imagen)
 # packer init main.pkr.hcl, descarga los plugins necesarios
 # packer validate -var "aws_access_key=$env:PKR_VAR_aws_access_key" `  -var "aws_secret_key=$env:PKR_VAR_aws_secret_key" `  -var "aws_session_token=$env:PKR_VAR_aws_session_token" `  -var-file="variables/variables.pkrvars.hcl" main.pkr.hcl, VERIFICA SINTAXIS DE LA PLANTILLA
 # packer inspect -var-file=variables/variables.hcl main.pkr.hcl, MUESTRA LA CONFIGURACIÓN DE LA PLANTILLA
