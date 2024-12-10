@@ -16,12 +16,12 @@ provider "aws" {
 resource "null_resource" "packer_ami" {
   provisioner "local-exec" {
     command = <<EOT
-      packer build -var "aws_access_key=$PKR_VAR_aws_access_key" \ # Clave de acceso de AWS
-                   -var "aws_secret_key=$PKR_VAR_aws_secret_key" \ # Clave secreta de AWS
-                   -var "aws_session_token=$PKR_VAR_aws_session_token" \ # Token de sesión de AWS
-                   -var "aws_region=${var.aws_region}" \          # Región de AWS para la AMI
-                   -var "ami_name=${var.ami_name}" \              # Nombre de la AMI generada
-                   ../packer/main.pkr.hcl                         # Ruta al archivo de configuración de Packer
+      packer build -var "aws_access_key=${env.PKR_VAR_aws_access_key}" \ 
+                   -var "aws_secret_key=${env.PKR_VAR_aws_secret_key}" \
+                   -var "aws_session_token=${env.PKR_VAR_aws_session_token}" \ 
+                   -var "aws_region=${var.aws_region}" \
+                   -var "ami_name=${var.ami_name}" \              
+                   ../packer/main.pkr.hcl                         
     EOT
   }
 }
@@ -51,12 +51,12 @@ data "aws_vpc" "default" {
 # Este bloque define un grupo de seguridad para gestionar el tráfico hacia la instancia.
 resource "aws_security_group" "web_server_sg" {
   name        = "${var.instance_name}-sg" # Nombre del grupo de seguridad.
-  description = "Grupo de seguridad para la instancia EC2 ${var.instance_name}"
+  description = "Grupo de seguridad para la instancia EC2"
   vpc_id = data.aws_vpc.default.id # ID de la VPC donde se creará el grupo de seguridad.
 
   # Reglas de ingreso: permite acceso HTTP y SSH.
   ingress {
-    description      = "Permitir tráfico HTTP"
+    description      = "Permitir trafico HTTP"
     from_port        = 80 # Puerto HTTP.
     to_port          = 80
     protocol         = "tcp"
@@ -64,7 +64,7 @@ resource "aws_security_group" "web_server_sg" {
   }
 
   ingress {
-    description      = "Permitir tráfico HTTPS"
+    description      = "Permitir trafico HTTPS"
     from_port        = 443 # Puerto HTTPS.
     to_port          = 443
     protocol         = "tcp"
@@ -95,15 +95,24 @@ resource "aws_instance" "web_server" {
   ami                   = data.aws_ami.latest_ami.id
   instance_type         = var.instance_type
   key_name              = var.key_name
-  vpc_security_group_ids = [aws_security_group.web_server_sg.id] # Asocia el grupo de seguridad creado.
+  vpc_security_group_ids = [aws_security_group.web_server_sg.id]
 
   tags = {
     Name = var.instance_name
   }
 
+  # Configuración de conexión SSH
+  connection {
+    type        = "ssh"
+    user        = "ubuntu" # Usuario predeterminado para AMIs de Ubuntu
+    private_key = file("C:\\Users\\User\\.aws\\unir.pem") # Ruta a la clave privada
+    host        = self.public_ip
+  }
+
+  # Provisionador remoto para ejecutar comandos
   provisioner "remote-exec" {
     inline = [
-      "echo 'La instancia está corriendo y configurada'"
+      "echo 'La instancia está configurada correctamente.'"
     ]
   }
 }
@@ -131,6 +140,6 @@ output "public_ip" {
 ####################################################################################################
 # DESPLEGAR TERRAFORM
 # terraform init --> Inicializa el directorio de trabajo
-# terraform plan --> Muestra los cambios que se realizarán
+# terraform plan -var "aws_access_key=$env:PKR_VAR_aws_access_key" `  -var "aws_secret_key=$env:PKR_VAR_aws_secret_key" `  -var "aws_session_token=$env:PKR_VAR_aws_session_token" --> Muestra los cambios que se realizarán
 # terraform apply --> Aplica los cambios y despliega la infraestructura
 # terraform destroy --> Elimina la infraestructura creada
