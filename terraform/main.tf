@@ -16,12 +16,14 @@ provider "aws" {
 resource "null_resource" "packer_ami" {
   provisioner "local-exec" {
     command = <<EOT
-      packer build -var "aws_access_key=${env.PKR_VAR_aws_access_key}" \ 
-                   -var "aws_secret_key=${env.PKR_VAR_aws_secret_key}" \
-                   -var "aws_session_token=${env.PKR_VAR_aws_session_token}" \ 
-                   -var "aws_region=${var.aws_region}" \
-                   -var "ami_name=${var.ami_name}" \              
-                   ../packer/main.pkr.hcl                         
+      packer build \
+        -var "aws_access_key=${var.aws_access_key}" \
+        -var "aws_secret_key=${var.aws_secret_key}" \
+        -var "aws_session_token=${var.aws_session_token}" \
+        -var "aws_region=${var.aws_region}" \
+        -var "ami_name=${var.ami_name}" \
+        -var-file="../packer/variables.pkrvars.hcl" \ # Archivo de variables
+        ../packer/main.pkr.hcl
     EOT
   }
 }
@@ -53,7 +55,11 @@ resource "aws_security_group" "web_server_sg" {
   name        = "${var.instance_name}-sg" # Nombre del grupo de seguridad.
   description = "Grupo de seguridad para la instancia EC2"
   vpc_id = data.aws_vpc.default.id # ID de la VPC donde se creará el grupo de seguridad.
-
+  
+  lifecycle {
+    prevent_destroy = false
+    ignore_changes = [name]
+  }
   # Reglas de ingreso: permite acceso HTTP y SSH.
   ingress {
     description      = "Permitir trafico HTTP"
