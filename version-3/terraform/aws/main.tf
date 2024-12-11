@@ -27,7 +27,7 @@ data "aws_ami" "latest_ami" {
   most_recent = true                      # Selecciona siempre la AMI más reciente.
   filter {
     name   = "name"                       # Filtra por el nombre de la AMI.
-    values = ["${var.ami_name}*"]         # Busca nombres que coincidan parcialmente con el valor de la variable `ami_name`.
+    values = ["${var.aws_ami_name}*"]         # Busca nombres que coincidan parcialmente con el valor de la variable `ami_name`.
   }
   owners = ["self"]                       # Limita la búsqueda a las AMIs creadas por el propietario actual.
 }
@@ -47,7 +47,7 @@ data "aws_security_group" "existing_sg" {
   # Filtro para buscar un grupo de seguridad por su nombre.
   filter {
     name   = "group-name"
-    values = ["${var.instance_name}-sg"] # Nombre basado en la variable `instance_name`.
+    values = ["${var.aws_instance_name}-sg"] # Nombre basado en la variable `instance_name`.
   }
   # Filtro para asegurarse de que pertenece a la VPC predeterminada.
   filter {
@@ -59,7 +59,7 @@ data "aws_security_group" "existing_sg" {
 resource "aws_security_group" "web_server_sg" {
   # Crear un nuevo grupo de seguridad solo si no existe uno con el nombre especificado.
   count = try(data.aws_security_group.existing_sg.id != "", false) ? 0 : 1 # Condición para crear o no el recurso. (si no existe count=1, se crea uno nuevo), try es para que no falle si no hay
-  name        = "${var.instance_name}-sg" # El nombre del grupo de seguridad se basa en el nombre de la instancia.
+  name        = "${var.aws_instance_name}-sg" # El nombre del grupo de seguridad se basa en el nombre de la instancia.
   description = "Grupo de seguridad para la instancia EC2" # Descripción del grupo.
   vpc_id      = data.aws_vpc.default.id  # Asocia este grupo de seguridad a la VPC predeterminada.
   
@@ -109,14 +109,14 @@ resource "aws_security_group" "web_server_sg" {
 
 resource "aws_instance" "web_server" {
   ami                   = data.aws_ami.latest_ami.id # Usa la AMI más reciente creada con Packer.
-  instance_type         = var.instance_type          # Define el tipo de instancia basado en la variable `instance_type`.
-  key_name              = var.key_name               # Especifica la clave SSH para acceso remoto.
+  instance_type         = var.aws_instance_type          # Define el tipo de instancia basado en la variable `instance_type`.
+  key_name              = var.aws_key_name               # Especifica la clave SSH para acceso remoto.
   #vpc_security_group_ids = [aws_security_group.web_server_sg.id] # Asocia el grupo de seguridad configurado.
   # Referencia correcta al grupo de seguridad configurado.
   vpc_security_group_ids = length(aws_security_group.web_server_sg) > 0 ? [aws_security_group.web_server_sg[0].id] : [data.aws_security_group.existing_sg.id]
 
   tags = {
-    Name = var.instance_name # Etiqueta la instancia con el nombre especificado en la variable.
+    Name = var.aws_instance_name # Etiqueta la instancia con el nombre especificado en la variable.
   }
 
   # Configuración para conectar a la instancia vía SSH.

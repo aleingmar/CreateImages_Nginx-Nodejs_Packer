@@ -1,3 +1,13 @@
+#El archivo main.tf en common debe estar configurado para cargar correctamente los módulos aws y azure.
+###### PROVIDERS ######
+provider "aws" {
+  region = var.aws_region
+}
+
+provider "azurerm" {
+  features {}
+}
+
 module "aws" {
   source = "./aws"
 
@@ -21,6 +31,7 @@ module "azure" {
   azure_ami_name          = var.azure_ami_name
 }
 
+###### OUTPUTS ######
 output "aws_public_ip" {
   value = module.aws.public_ip
 }
