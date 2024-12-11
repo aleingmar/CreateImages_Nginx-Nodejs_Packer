@@ -57,6 +57,9 @@ source "amazon-ebs" "aws_builder" {
   ssh_username  = "ubuntu"    # Usuario predeterminado en AMIs de Ubuntu
   #ami_name      = "${var.ami_name}-${timestamp()}"
   ami_name = var.ami_name
+  tags = {
+    Name = "Packer-Builder" # Nombre descriptivo para la instancia Packer.
+  }
 
 }
 
