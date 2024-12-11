@@ -1,0 +1,25 @@
+---
+- name: Configuración de Node.js y Nginx
+  hosts: all
+  become: yes
+  tasks:
+    - name: Instalar Nginx
+      apt:
+        name: nginx
+        state: present
+
+    - name: Instalar Node.js
+      shell: |
+        curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+        apt install -y nodejs
+
+    - name: Copiar aplicación
+      copy:
+        src: ./app.js
+        dest: /var/www/app.js
+
+    - name: Configurar PM2
+      shell: |
+        npm install pm2@latest -g
+        pm2 start /var/www/app.js
+        pm2 save
