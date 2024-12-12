@@ -1,3 +1,11 @@
+### Variable para elegir en que nube quiero desplegar
+
+variable "deployment_target" {
+  description = "Define qué infraestructura desplegar: aws, azure o both"
+  default     = "both"
+}
+
+
 ############################################
 # AWS
 ######º#####################################

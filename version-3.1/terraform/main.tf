@@ -25,6 +25,9 @@ provider "azurerm" {
 # Este recurso utiliza un comando local (en la maquina que ejecuta terraform init) para ejecutar Packer con las variables necesarias
 # y generar la AMI basada en el archivo de configuración de Packer (main.pkr.hcl).
 resource "null_resource" "packer_ami" {
+
+  count = var.deployment_target == "aws" || var.deployment_target == "both" ? 1 : 0
+
   # local-exec ejecuta un comando en la máquina que ejecuta Terraform.
   provisioner "local-exec" {
     # Este comando invoca Packer para construir una AMI personalizada usando las variables y configuraciones proporcionadas.
@@ -36,6 +39,7 @@ resource "null_resource" "packer_ami" {
 # OBTENER LA ÚLTIMA AMI CREADA
 ####################################################################################################
 data "aws_ami" "latest_ami" {
+  count = var.deployment_target == "aws" || var.deployment_target == "both" ? 1 : 0
   depends_on = [null_resource.packer_ami] # Espera a que el provisioner "packer_ami" termine --> asegura que la AMI sea creada antes de intentar recuperarla.
   most_recent = true                      # Selecciona siempre la AMI más reciente.
   filter {
@@ -49,6 +53,7 @@ data "aws_ami" "latest_ami" {
 # OBTENER LA VPC POR DEFECTO (configuración de red virtual)
 ####################################################################################################
 data "aws_vpc" "default" {
+  count = var.deployment_target == "aws" || var.deployment_target == "both" ? 1 : 0
   default = true # Recupera la VPC predeterminada asociada a la cuenta AWS.
 }
 
@@ -57,6 +62,7 @@ data "aws_vpc" "default" {
 ####################################################################################################
 # Intentar buscar un grupo de seguridad existente basado en su nombre y VPC.
 data "aws_security_group" "existing_sg" {
+  count = var.deployment_target == "aws" || var.deployment_target == "both" ? 1 : 0
   # Filtro para buscar un grupo de seguridad por su nombre.
   filter {
     name   = "group-name"
@@ -72,6 +78,7 @@ data "aws_security_group" "existing_sg" {
 resource "aws_security_group" "web_server_sg" {
   # Crear un nuevo grupo de seguridad solo si no existe uno con el nombre especificado.
   count = try(data.aws_security_group.existing_sg.id != "", false) ? 0 : 1 # Condición para crear o no el recurso. (si no existe count=1, se crea uno nuevo), try es para que no falle si no hay
+  #count = length(try(data.aws_security_group.existing_sg.id, [])) == 0 ? 1 : 0
   name        = "${var.instance_name}-sg" # El nombre del grupo de seguridad se basa en el nombre de la instancia.
   description = "Grupo de seguridad para la instancia EC2" # Descripción del grupo.
   vpc_id      = data.aws_vpc.default.id  # Asocia este grupo de seguridad a la VPC predeterminada.
@@ -121,6 +128,9 @@ resource "aws_security_group" "web_server_sg" {
 # Asocia el grupo de seguridad a la instancia EC2 y configura la conexión SSH.
 
 resource "aws_instance" "web_server" {
+  ## IMPORTANTE--> Condicion para desplegar en AWS, si al hacer el terraform apply el valor del target es aws o both, se desplegara en aws
+  count = var.deployment_target == "aws" || var.deployment_target == "both" ? 1 : 0
+
   ami                   = data.aws_ami.latest_ami.id # Usa la AMI más reciente creada con Packer.
   instance_type         = var.instance_type          # Define el tipo de instancia basado en la variable `instance_type`.
   key_name              = var.key_name               # Especifica la clave SSH para acceso remoto.
@@ -162,6 +172,9 @@ resource "aws_instance" "web_server" {
 # Este recurso utiliza un comando local (en la máquina que ejecuta `terraform init`) para ejecutar Packer con las variables necesarias
 # y generar la imagen basada en el archivo de configuración de Packer (`main.pkr.hcl`).
 resource "null_resource" "packer_ami_azure" {
+
+  count = var.deployment_target == "azure" || var.deployment_target == "both" ? 1 : 0
+
   # local-exec ejecuta un comando en la máquina que ejecuta Terraform.
   provisioner "local-exec" {
     # Este comando invoca Packer para construir una imagen personalizada usando las variables y configuraciones proporcionadas.
@@ -173,6 +186,9 @@ resource "null_resource" "packer_ami_azure" {
 # OBTENER LA ÚLTIMA IMAGEN CREADA EN AZURE
 ####################################################################################################
 data "azurerm_image" "latest_azure_image" {
+
+  count = var.deployment_target == "azure" || var.deployment_target == "both" ? 1 : 0
+
   depends_on = [null_resource.packer_ami_azure] # Espera a que el provisioner `packer_ami_azure` termine --> asegura que la imagen sea creada antes de intentar recuperarla.
   name                = var.azure_image_name    # Busca la imagen por el nombre especificado en las variables.
   resource_group_name = var.azure_resource_group_name # Especifica el grupo de recursos donde está ubicada la imagen.
@@ -231,6 +247,10 @@ resource "azurerm_network_interface" "example_nic" {
 # Asocia la interfaz de red y configura los discos y el perfil del sistema operativo.
 
 resource "azurerm_virtual_machine" "example_vm" {
+
+  ## IMPORTANTE--> Condicion para desplegar en AZURE, si al hacer el terraform apply el valor del target es azure o both, se desplegara en azure
+  count = var.deployment_target == "azure" || var.deployment_target == "both" ? 1 : 0
+
   name                  = "${var.instance_name}-vm" # Nombre de la máquina virtual basado en `instance_name`.
   location              = azurerm_resource_group.example_rg.location # Ubicación de la máquina virtual (mismo lugar que el grupo de recursos).
   resource_group_name   = azurerm_resource_group.example_rg.name      # Grupo de recursos asociado.
@@ -305,3 +325,6 @@ output "azure_vm_ip" {
 
 # terraform plan ` -var "aws_access_key=$env:PKR_VAR_aws_access_key" ` -var "aws_secret_key=$env:PKR_VAR_aws_secret_key" ` -var "aws_session_token=$env:PKR_VAR_aws_session_token" ` -var "azure_subscription_id=$env:ARM_SUBSCRIPTION_ID" ` -var "azure_client_id=$env:ARM_CLIENT_ID" ` -var "azure_client_secret=$env:ARM_CLIENT_SECRET" ` -var "azure_tenant_id=$env:ARM_TENANT_ID"
 # terraform plan -var "aws_access_key=$env:PKR_VAR_aws_access_key" -var "aws_secret_key=$env:PKR_VAR_aws_secret_key" -var "aws_session_token=$env:PKR_VAR_aws_session_token" -var "azure_subscription_id=$env:ARM_SUBSCRIPTION_ID" -var "azure_client_id=$env:ARM_CLIENT_ID" -var "azure_client_secret=$env:ARM_CLIENT_SECRET" -var "azure_tenant_id=$env:ARM_TENANT_ID"
+
+
+# terraform apply -var "deployment_target=aws" ` -var "aws_access_key=$env:PKR_VAR_aws_access_key" ` -var "aws_secret_key=$env:PKR_VAR_aws_secret_key" ` -var "aws_session_token=$env:PKR_VAR_aws_session_token"
