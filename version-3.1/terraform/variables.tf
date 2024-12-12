@@ -1,3 +1,8 @@
+############################################
+# AWS
+######º#####################################
+
+
 variable "aws_region" {
   default     = "us-east-1"
   description = "Región de AWS"
@@ -21,6 +26,7 @@ variable "instance_name" {
   default     = "mi-instancia-ec2"
   description = "Nombre de la instancia"
 }
+### CREDENCIALES
 
 variable "aws_access_key" {
   description = "Clave de acceso de AWS"
@@ -33,6 +39,10 @@ variable "aws_secret_key" {
 variable "aws_session_token" {
   description = "Token de sesión de AWS"
 }
+
+############################################
+# AZURE
+######º#####################################
 
 ###############CREDENCIALES
 variable "azure_subscription_id" { description = "Azure subscription ID" }
