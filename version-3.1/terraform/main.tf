@@ -165,7 +165,7 @@ resource "null_resource" "packer_ami_azure" {
   # local-exec ejecuta un comando en la máquina que ejecuta Terraform.
   provisioner "local-exec" {
     # Este comando invoca Packer para construir una imagen personalizada usando las variables y configuraciones proporcionadas.
-    command = "packer build -var azure_subscription_id=${var.azure_subscription_id} -var azure_client_id=${var.azure_client_id} -var azure_client_secret=${var.azure_client_secret} -var azure_tenant_id=${var.azure_tenant_id} -var azure_image_name=${var.azure_image_name} -var azure_location=${var.azure_region} -var-file=../packer/variables.pkrvars.hcl ../packer/main.pkr.hcl"
+    command = "packer build -var azure_subscription_id=${var.azure_subscription_id} -var azure_client_id=${var.azure_client_id} -var azure_client_secret=${var.azure_client_secret} -var azure_tenant_id=${var.azure_tenant_id} -var-file=../packer/variables.pkrvars.hcl ../packer/main.pkr.hcl"
   }
 }
 
@@ -269,11 +269,11 @@ resource "azurerm_virtual_machine" "example_vm" {
 # Estos bloques definen las salidas que se mostrarán al usuario al finalizar el despliegue.
 # Se incluye el ID de la instancia y su dirección IP pública.
 output "aws_instance_id" {
-  value = aws_instance.web_server_aws.id
+  value = aws_instance.web_server.id
 }
 
 output "aws_public_ip" {
-  value = aws_instance.web_server_aws.public_ip
+  value = aws_instance.web_server.public_ip
 }
 
 output "azure_vm_id" {
