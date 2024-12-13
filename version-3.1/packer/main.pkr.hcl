@@ -19,7 +19,10 @@ variable "ami_name" { description = "Nombre de la AMI generada" }
 variable "instance_type" { description = "Tipo de instancia de AWS" }
 variable "project_name" { description = "Nombre del proyecto" }
 variable "environment" { description = "Entorno del proyecto (dev, test, prod)" }
-
+# Credenciales de AWS
+variable "aws_access_key" { description = "Clave de acceso de AWS" }
+variable "aws_secret_key" { description = "Clave secreta de AWS" }
+variable "aws_session_token" { description = "Token de sesión de AWS" }
 
 variable "azure_image_name" { description = "Nombre de la imagen para Azure" }
 variable "azure_region" { description = "Región de Azure" }
