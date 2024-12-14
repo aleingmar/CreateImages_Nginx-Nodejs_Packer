@@ -176,6 +176,18 @@ resource "aws_instance" "web_server" {
 ####################################################################################################
 
 ####################################################################################################
+# CONFIGURACIÓN DEL GRUPO DE RECURSOS PARA LA MÁQUINA VIRTUAL EN AZURE
+####################################################################################################
+# Crea un grupo de recursos donde se alojarán los recursos de Azure, como redes y máquinas virtuales.
+resource "azurerm_resource_group" "example_rg" {
+
+  count = var.deployment_target == "azure" || var.deployment_target == "both" ? 1 : 0
+  #name     = "${var.instance_name}-rg" # El nombre del grupo de recursos se basa en la variable `instance_name`.
+  name = var.azure_resource_group_name
+  location = var.azure_region          # Define la región donde se desplegarán los recursos.
+}
+
+####################################################################################################
 # CONFIGURACIÓN PARA EJECUTAR PACKER Y GENERAR LA IMAGEN EN AZURE
 ####################################################################################################
 # Este recurso utiliza un comando local (en la máquina que ejecuta `terraform init`) para ejecutar Packer con las variables necesarias
@@ -183,7 +195,7 @@ resource "aws_instance" "web_server" {
 resource "null_resource" "packer_ami_azure" {
 
   count = var.deployment_target == "azure" || var.deployment_target == "both" ? 1 : 0
-
+  depends_on = [azurerm_resource_group.example_rg] # Espera a que el recurso `azurerm_resource_group.example_rg` termine --> asegura que el grupo de recursos esté creado antes de intentar crear la imagen.
   # local-exec ejecuta un comando en la máquina que ejecuta Terraform.
   provisioner "local-exec" {
     # Este comando invoca Packer para construir una imagen personalizada usando las variables y configuraciones proporcionadas.
@@ -200,18 +212,8 @@ data "azurerm_image" "latest_azure_image" {
 
   depends_on          = [null_resource.packer_ami_azure] # Espera a que el provisioner `packer_ami_azure` termine --> asegura que la imagen sea creada antes de intentar recuperarla.
   name                = var.azure_image_name    # Busca la imagen por el nombre especificado en las variables.
-  resource_group_name = var.azure_resource_group_name # Especifica el grupo de recursos donde está ubicada la imagen.
-}
-
-####################################################################################################
-# CONFIGURACIÓN DEL GRUPO DE RECURSOS PARA LA MÁQUINA VIRTUAL EN AZURE
-####################################################################################################
-# Crea un grupo de recursos donde se alojarán los recursos de Azure, como redes y máquinas virtuales.
-resource "azurerm_resource_group" "example_rg" {
-
-  count = var.deployment_target == "azure" || var.deployment_target == "both" ? 1 : 0
-  name     = "${var.instance_name}-rg" # El nombre del grupo de recursos se basa en la variable `instance_name`.
-  location = var.azure_region          # Define la región donde se desplegarán los recursos.
+  #resource_group_name = "${var.instance_name}-rg" # Especifica el grupo de recursos donde está ubicada la imagen.
+  resource_group_name = var.azure_resource_group_name
 }
 
 ####################################################################################################

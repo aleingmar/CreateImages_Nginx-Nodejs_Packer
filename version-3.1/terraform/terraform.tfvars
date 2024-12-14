@@ -8,6 +8,8 @@ aws_region     = "us-east-1"
 ami_name       = "IMAGEN_Node_Nginx"
 instance_type  = "t2.micro"
 key_name       = "unir" # Nombre del par de claves para acceder a la instancia
+
+######### COMPARTIDOS ENTRE LOS DOS
 instance_name  = "Instance_Node_Nginx"
 
 

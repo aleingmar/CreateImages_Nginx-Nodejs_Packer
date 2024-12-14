@@ -80,14 +80,7 @@ source "amazon-ebs" "aws_builder" {
   instance_type = var.instance_type
   ssh_username  = "ubuntu"
   ami_name      = var.ami_name
-  # Aplica los tags a la instancia temporal que Packer usa para crear la AMI
-  instance_tags = {
-    Name = "Packer-Temporary-Instance"
-    Project = var.project_name
-    Environment = var.environment
-  }
 
-  # Tags que se aplicarán a la AMI resultante
   tags = {
     Name = "Packer-Builder"
   }
@@ -104,6 +97,7 @@ source "azure-arm" "azure_builder" {
 
   managed_image_name                = var.azure_image_name
   managed_image_resource_group_name = var.azure_resource_group_name
+  #managed_image_resource_group_name=  "${var.instance_name}-rg"
   location                          = var.azure_region
 
   os_type     = "Linux"
