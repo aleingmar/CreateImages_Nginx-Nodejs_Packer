@@ -4,9 +4,9 @@ packer {
       version = ">= 1.0.0"
       source  = "github.com/hashicorp/amazon"
     }
-    azurerm = {
+    azure-arm = {
       version = ">= 1.0.0"
-      source  = "github.com/hashicorp/azurerm"
+      source  = "github.com/hashicorp/azure"
     }
   }
 }
@@ -14,15 +14,25 @@ packer {
 #######################################################################################################################
 # VARIABLES
 #######################################################################################################################
+# a las credenciales de AWS y Azureles voy a asignar valores por defecto, por si no se pasan al ejecutar el comando
 variable "aws_region" { description = "Región de AWS" }
 variable "ami_name" { description = "Nombre de la AMI generada" }
 variable "instance_type" { description = "Tipo de instancia de AWS" }
 variable "project_name" { description = "Nombre del proyecto" }
 variable "environment" { description = "Entorno del proyecto (dev, test, prod)" }
 # Credenciales de AWS
-variable "aws_access_key" { description = "Clave de acceso de AWS" }
-variable "aws_secret_key" { description = "Clave secreta de AWS" }
-variable "aws_session_token" { description = "Token de sesión de AWS" }
+variable "aws_access_key" { 
+  description = "Clave de acceso de AWS" 
+  default = "default"
+}
+variable "aws_secret_key" { 
+  description = "Clave secreta de AWS" 
+  default = "default"
+}
+variable "aws_session_token" { 
+  description = "Token de sesión de AWS" 
+  default = "default"
+}
 
 variable "azure_image_name" { description = "Nombre de la imagen para Azure" }
 variable "azure_region" { description = "Región de Azure" }
@@ -31,10 +41,22 @@ variable "azure_admin_username" { description = "Usuario administrador para Azur
 variable "azure_admin_password" { description = "Contraseña del administrador para Azure"  }
 variable "azure_resource_group_name" { description = "Nombre del grupo de recursos de Azure" }
 # CREDENCIALES (no hace falta definirlas creo)
-# variable "azure_subscription_id" { description = "ID de la suscripción de Azure" }
-# variable "azure_client_id" { description = "ID de la aplicación (cliente) en Azure" }
-# variable "azure_client_secret" { description = "Clave secreta de la aplicación (cliente) en Azure" }
-# variable "azure_tenant_id" { description = "ID del inquilino en Azure" }
+variable "azure_subscription_id" { 
+  description = "ID de la suscripción de Azure" 
+  default = "default"
+}
+variable "azure_client_id" { 
+  description = "ID de la aplicación (cliente) en Azure" 
+  default = "default"
+}
+variable "azure_client_secret" { 
+  description = "Clave secreta de la aplicación (cliente) en Azure" 
+  default = "default"
+}
+variable "azure_tenant_id" { 
+  description = "ID del inquilino en Azure" 
+  default = "default"
+}
 
 #######################################################################################################################
 # AWS BUILDER
@@ -42,6 +64,7 @@ variable "azure_resource_group_name" { description = "Nombre del grupo de recurs
 source "amazon-ebs" "aws_builder" {
   access_key    = var.aws_access_key
   secret_key    = var.aws_secret_key
+  token         = var.aws_session_token
   region        = var.aws_region
 
   source_ami_filter {
@@ -57,6 +80,14 @@ source "amazon-ebs" "aws_builder" {
   instance_type = var.instance_type
   ssh_username  = "ubuntu"
   ami_name      = var.ami_name
+  # Aplica los tags a la instancia temporal que Packer usa para crear la AMI
+  instance_tags = {
+    Name = "Packer-Temporary-Instance"
+    Project = var.project_name
+    Environment = var.environment
+  }
+
+  # Tags que se aplicarán a la AMI resultante
   tags = {
     Name = "Packer-Builder"
   }
@@ -65,7 +96,7 @@ source "amazon-ebs" "aws_builder" {
 #######################################################################################################################
 # AZURE BUILDER
 #######################################################################################################################
-source "azurerm" "azure_builder" {
+source "azure-arm" "azure_builder" {
   subscription_id = var.azure_subscription_id
   client_id       = var.azure_client_id
   client_secret   = var.azure_client_secret
@@ -89,8 +120,8 @@ source "azurerm" "azure_builder" {
 # PROVISIONERS (SAME FOR BOTH CLOUD (AWS AND AZURE))
 #######################################################################################################################
 build {
-  name    = "aws-node-nginx"
-  sources = ["source.amazon-ebs.aws_builder", "source.azurerm.azure_builder"]
+  name    = "cloud-node-nginx"
+  sources = ["source.amazon-ebs.aws_builder", "source.azure-arm.azure_builder"]
 
   provisioner "shell" {
     inline = [

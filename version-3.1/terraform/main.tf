@@ -34,7 +34,7 @@ resource "null_resource" "packer_ami" {
   # local-exec ejecuta un comando en la máquina que ejecuta Terraform.
   provisioner "local-exec" {
     # Este comando invoca Packer para construir una AMI personalizada usando las variables y configuraciones proporcionadas.
-    command = "packer build -var aws_access_key=${var.aws_access_key} -var aws_secret_key=${var.aws_secret_key} -var aws_session_token=${var.aws_session_token} -var-file=..\\packer\\variables.pkrvars.hcl ..\\packer\\main.pkr.hcl"
+    command = "packer build -only=cloud-node-nginx.amazon-ebs.aws_builder -var aws_access_key=${var.aws_access_key} -var aws_secret_key=${var.aws_secret_key} -var aws_session_token=${var.aws_session_token} -var-file=..\\packer\\variables.pkrvars.hcl ..\\packer\\main.pkr.hcl"
   }
 }
 
@@ -187,7 +187,7 @@ resource "null_resource" "packer_ami_azure" {
   # local-exec ejecuta un comando en la máquina que ejecuta Terraform.
   provisioner "local-exec" {
     # Este comando invoca Packer para construir una imagen personalizada usando las variables y configuraciones proporcionadas.
-    command = "packer build -var azure_subscription_id=${var.azure_subscription_id} -var azure_client_id=${var.azure_client_id} -var azure_client_secret=${var.azure_client_secret} -var azure_tenant_id=${var.azure_tenant_id} -var-file=../packer/variables.pkrvars.hcl ../packer/main.pkr.hcl"
+    command = "packer build -only=cloud-node-nginx.azure-arm.azure_builder -var azure_subscription_id=${var.azure_subscription_id} -var azure_client_id=${var.azure_client_id} -var azure_client_secret=${var.azure_client_secret} -var azure_tenant_id=${var.azure_tenant_id} -var-file=../packer/variables.pkrvars.hcl ../packer/main.pkr.hcl"
   }
 }
 
@@ -346,5 +346,5 @@ output "azure_vm_ip" {
 
 #  terraform apply "deployment_target=aws" -var "aws_access_key=$env:PKR_VAR_aws_access_key" -var "aws_secret_key=$env:PKR_VAR_aws_secret_key" -var "aws_session_token=$env:PKR_VAR_aws_session_token" -var "azure_subscription_id=$env:ARM_SUBSCRIPTION_ID" -var "azure_client_id=$env:ARM_CLIENT_ID" -var "azure_client_secret=$env:ARM_CLIENT_SECRET" -var "azure_tenant_id=$env:ARM_TENANT_ID"
 
-
+######## EL BUENO
 # terraform apply -var "deployment_target=aws" ` -var "aws_access_key=$env:PKR_VAR_aws_access_key" ` -var "aws_secret_key=$env:PKR_VAR_aws_secret_key" ` -var "aws_session_token=$env:PKR_VAR_aws_session_token" ` -var "azure_subscription_id=$env:ARM_SUBSCRIPTION_ID" ` -var "azure_client_id=$env:ARM_CLIENT_ID" ` -var "azure_client_secret=$env:ARM_CLIENT_SECRET" ` -var "azure_tenant_id=$env:ARM_TENANT_ID"
