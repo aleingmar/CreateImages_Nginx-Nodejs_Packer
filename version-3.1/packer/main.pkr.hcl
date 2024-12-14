@@ -123,28 +123,54 @@ build {
   name    = "cloud-node-nginx"
   sources = ["source.amazon-ebs.aws_builder", "source.azure-arm.azure_builder"]
 
-  provisioner "shell" {
+  # Primer provisioner: ejecuta comandos de shell en la instancia
+  provisioner "shell" {                             
     inline = [
-      "sudo apt update -y",
-      "sudo apt install -y nginx",
-      "curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -",
-      "sudo apt install -y nodejs build-essential",
-      "sudo npm install pm2@latest -g",
-      "sudo ufw allow 'Nginx Full'",
-      "sudo systemctl enable nginx"
+      "sudo apt update -y",                         # Actualiza la lista de paquetes
+      "sudo apt install -y nginx",                 # Instala el servidor web Nginx
+      "curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -", # Configura el repositorio para instalar Node.js 14
+      "sudo apt install -y nodejs build-essential", # Instala Node.js y herramientas de construcción esenciales
+      "sudo npm install pm2@latest -g",            # Instala PM2 globalmente para gestionar procesos Node.js
+      "sudo ufw allow 'Nginx Full'",               # Configura el firewall para permitir tráfico HTTP y HTTPS para Nginx
+      "sudo systemctl enable nginx"                # Habilita el servicio Nginx para que se inicie automáticamente
     ]
   }
 
-  provisioner "file" {
-    source      = "../packer/provisioners/app.js"
-    destination = "/home/ubuntu/app.js"
+  # Segundo provisioner: transfiere un archivo desde el host a la instancia
+  provisioner "file" {                              
+    source      = "../packer/provisioners/app.js"            # Ruta del archivo en el host
+    destination = "/home/ubuntu/app.js"            # Ruta de destino en la instancia
   }
 
+  # Tercer provisioner: configura la aplicación Node.js con PM2 (gestor de procesos de Node.js)
   provisioner "shell" {
     inline = [
-      "sudo pm2 start /home/ubuntu/app.js",
-      "sudo pm2 save",
-      "sudo systemctl restart nginx"
+      "sudo pm2 start /home/ubuntu/app.js",               # Inicia la aplicación como root
+      "sudo env PATH=$PATH:/usr/bin pm2 startup systemd --hp /root", # Configura PM2 para autoarranque como root
+      "sudo pm2 save",                                    # Guarda el estado de PM2 en /root/.pm2/dump.pm2
+      "sudo cp /root/.pm2/dump.pm2 /etc/pm2-dump.pm2 || true" # Copia el dump a una ubicación segura (opcional)
+    ]
+  }
+
+  ### Provisioners (4 y 5) para configurar Nginx como proxy inverso
+
+  # Cuarto provisioner: Copiar el archivo de configuración de Nginx al servidor
+  provisioner "file" {
+    source      = "../packer/provisioners/nginx_default.conf"
+    destination = "/tmp/nginx_default"
+  }
+
+  # Quinto provisioner:Configuración de Nginx como proxy inverso y validación
+  provisioner "shell" {
+    inline = [
+      # Copia la configuración de Nginx
+      "sudo cp /tmp/nginx_default /etc/nginx/sites-available/default",
+      # Prueba la configuración de Nginx
+      "sudo nginx -t",
+      # Reinicia el servicio de Nginx
+      "sudo systemctl restart nginx",
+      # Valida que el servidor está funcionando
+      "curl -I localhost"
     ]
   }
 }
