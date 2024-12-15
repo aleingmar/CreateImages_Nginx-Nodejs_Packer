@@ -361,6 +361,21 @@ resource "azurerm_virtual_machine" "example_vm" {
   os_profile_linux_config {
     disable_password_authentication = false         # Permite autenticación con contraseña.
   }
+
+  # Provisioner para ejecutar comandos en la VM
+  provisioner "remote-exec" {
+    connection {
+      type        = "ssh"
+      host        = azurerm_public_ip.example_public_ip[0].ip_address
+      user        = var.azure_admin_username
+      password    = var.azure_admin_password
+    }
+
+    inline = [
+      # Ejecuta app.js (trampilla un poco no he conseguido hacerlo directamente con la plantilla)
+      "pm2 start /home/ubuntu/app.js"
+    ]
+  }
 }
 
 ####################################################################################################
