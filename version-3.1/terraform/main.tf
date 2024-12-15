@@ -34,7 +34,7 @@ resource "null_resource" "packer_ami" {
   # local-exec ejecuta un comando en la máquina que ejecuta Terraform.
   provisioner "local-exec" {
     # Este comando invoca Packer para construir una AMI personalizada usando las variables y configuraciones proporcionadas.
-    command = "packer build -only=cloud-node-nginx.amazon-ebs.aws_builder -var aws_access_key=${var.aws_access_key} -var aws_secret_key=${var.aws_secret_key} -var aws_session_token=${var.aws_session_token} -var-file=..\\packer\\variables.pkrvars.hcl ..\\packer\\main.pkr.hcl"
+    command = "packer build -only=comandos-cloud-node-nginx.amazon-ebs.aws_builder -var aws_access_key=${var.aws_access_key} -var aws_secret_key=${var.aws_secret_key} -var aws_session_token=${var.aws_session_token} -var-file=..\\packer\\variables.pkrvars.hcl ..\\packer\\main.pkr.hcl"
   }
 }
 
@@ -199,7 +199,7 @@ resource "null_resource" "packer_ami_azure" {
   # local-exec ejecuta un comando en la máquina que ejecuta Terraform.
   provisioner "local-exec" {
     # Este comando invoca Packer para construir una imagen personalizada usando las variables y configuraciones proporcionadas.
-    command = "packer build -only=cloud-node-nginx.azure-arm.azure_builder -var azure_subscription_id=${var.azure_subscription_id} -var azure_client_id=${var.azure_client_id} -var azure_client_secret=${var.azure_client_secret} -var azure_tenant_id=${var.azure_tenant_id} -var-file=../packer/variables.pkrvars.hcl ../packer/main.pkr.hcl"
+    command = "packer build -only=ansible-cloud-node-nginx.azure-arm.azure_builder -var azure_subscription_id=${var.azure_subscription_id} -var azure_client_id=${var.azure_client_id} -var azure_client_secret=${var.azure_client_secret} -var azure_tenant_id=${var.azure_tenant_id} -var-file=../packer/variables.pkrvars.hcl ../packer/main.pkr.hcl"
   }
 }
 

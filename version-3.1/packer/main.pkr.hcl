@@ -8,6 +8,10 @@ packer {
       version = ">= 1.0.0"
       source  = "github.com/hashicorp/azure"
     }
+    ansible = {
+      version = ">= 1.0.0"
+      source  = "github.com/hashicorp/ansible"
+    }
   }
 }
 
@@ -98,7 +102,7 @@ source "azure-arm" "azure_builder" {
   managed_image_name             = var.azure_image_name
   managed_image_resource_group_name = var.azure_resource_group_name
   location                       = var.azure_region
-  ssh_username = "ubuntu"
+  ssh_username = "ubuntu" # usuario para conectarse a la instancia y realizar todas las operaciones
 
   vm_size                        = var.azure_instance_type # instancia equivalente a t2.micro de aws
   os_type                        = "Linux"
@@ -116,8 +120,9 @@ source "azure-arm" "azure_builder" {
 # PROVISIONERS (SAME FOR BOTH CLOUD (AWS AND AZURE))
 #######################################################################################################################
 build {
-  name    = "cloud-node-nginx"
-  sources = ["source.amazon-ebs.aws_builder", "source.azure-arm.azure_builder"]
+  name    = "comandos-cloud-node-nginx"
+  #sources = ["source.amazon-ebs.aws_builder", "source.azure-arm.azure_builder"]
+  sources = ["source.amazon-ebs.aws_builder"]
 
   # Primer provisioner: ejecuta comandos de shell en la instancia
   provisioner "shell" {                             
@@ -168,5 +173,30 @@ build {
       # Valida que el servidor está funcionando
       "curl -I localhost"
     ]
+  }
+}
+####3
+
+build {
+  name    = "ansible-cloud-node-nginx"
+  sources = ["source.azure-arm.azure_builder"]
+
+  provisioner "shell" {
+    inline = [
+      "sudo apt update -y",
+      "sudo apt install -y ansible"
+    ]
+  }
+  provisioner "file" {
+  source      = "../packer/provisioners/app.js"
+  destination = "/tmp/app.js"
+}
+
+  provisioner "file" {
+  source      = "../packer/provisioners/nginx_default.conf"
+  destination = "/tmp/nginx_default.conf"
+}
+  provisioner "ansible-local" {
+    playbook_file = "../packer/provisioners/provision.yml" #perspectiva desde el terraform apply 
   }
 }

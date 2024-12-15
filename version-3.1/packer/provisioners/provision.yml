@@ -1,0 +1,87 @@
+---
+- name: Configuración de Node.js, Nginx y PM2 con Ansible
+  hosts: all
+  become: yes
+  tasks:
+    # Actualizar la lista de paquetes
+    - name: Actualizar paquetes
+      apt:
+        update_cache: yes
+
+    # Instalar Nginx
+    - name: Instalar Nginx
+      apt:
+        name: nginx
+        state: present
+
+    # Configurar el firewall para Nginx
+    - name: Permitir tráfico HTTP y HTTPS en UFW
+      ufw:
+        rule: allow
+        name: "Nginx Full"
+
+    # Habilitar el servicio de Nginx
+    - name: Habilitar servicio de Nginx
+      systemd:
+        name: nginx
+        enabled: yes
+        state: started
+
+    # Configurar repositorio y instalar Node.js
+    - name: Configurar repositorio de Node.js
+      shell: |
+        curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+        apt install -y nodejs build-essential
+
+    # Instalar PM2 globalmente
+    - name: Instalar PM2
+      npm:
+        name: pm2
+        global: yes
+
+    # Copiar aplicación Node.js
+    - name: Copiar aplicación Node.js
+      copy:
+        src: /tmp/app.js
+        dest: /home/ubuntu/app.js
+        owner: ubuntu
+        group: ubuntu
+        mode: '0777'
+
+    # Configurar PM2 para gestionar la aplicación
+    #sudo env PATH=$PATH:/usr/bin /usr/lib/node_modules/pm2/bin/pm2 startup systemd -u sammy --hp /home/sammy
+    #env PATH=$PATH:/usr/bin pm2 startup systemd --hp /root
+    - name: Configurar aplicación con PM2
+      shell: |
+        pm2 start /home/ubuntu/app.js
+        env PATH=$PATH:/usr/bin pm2 startup systemd -u ubuntu --hp /home/ubuntu
+        pm2 save
+        
+
+    # Copiar archivo de configuración de Nginx
+    - name: Copiar configuración de Nginx
+      copy:
+        src: /tmp/nginx_default.conf
+        dest: /etc/nginx/sites-available/default
+        owner: root
+        group: root
+        mode: '0644'
+
+    # Probar y reiniciar Nginx
+    - name: Probar configuración de Nginx
+      command: nginx -t
+
+    - name: Reiniciar Nginx
+      systemd:
+        name: nginx
+        state: restarted
+
+    # Validar el servidor
+    - name: Validar que el servidor está funcionando
+      shell: |
+        curl -I localhost
+      register: curl_output
+
+    - name: Mostrar resultado de la validación
+      debug:
+        var: curl_output.stdout
