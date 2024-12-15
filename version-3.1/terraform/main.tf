@@ -223,7 +223,7 @@ data "azurerm_image" "latest_azure_image" {
 resource "azurerm_virtual_network" "example_vnet" {
 
   count = var.deployment_target == "azure" || var.deployment_target == "both" ? 1 : 0
-  name                = "${var.instance_name}-vnet"  # Nombre de la red virtual basado en `instance_name`.
+  name                = "${var.azure_instance_name}-vnet"  # Nombre de la red virtual basado en `instance_name`.
   address_space       = ["10.0.0.0/16"]              # Espacio de direcciones IP asignado a la red.
   location            = azurerm_resource_group.example_rg[0].location # Ubicación de la red virtual (mismo lugar que el grupo de recursos).
   resource_group_name = azurerm_resource_group.example_rg[0].name     # Grupo de recursos asociado.
@@ -236,7 +236,7 @@ resource "azurerm_virtual_network" "example_vnet" {
 resource "azurerm_subnet" "example_subnet" {
 
   count = var.deployment_target == "azure" || var.deployment_target == "both" ? 1 : 0
-  name                 = "${var.instance_name}-subnet"  # Nombre de la subred basado en `instance_name`.
+  name                 = "${var.azure_instance_name}-subnet"  # Nombre de la subred basado en `instance_name`.
   resource_group_name  = azurerm_resource_group.example_rg[0].name # Grupo de recursos asociado.
   virtual_network_name = azurerm_virtual_network.example_vnet[0].name # Nombre de la red virtual a la que pertenece esta subred.
   address_prefixes     = ["10.0.1.0/24"]                # Rango de direcciones IP asignado a esta subred.
@@ -249,7 +249,7 @@ resource "azurerm_subnet" "example_subnet" {
 resource "azurerm_network_interface" "example_nic" {
 
   count = var.deployment_target == "azure" || var.deployment_target == "both" ? 1 : 0
-  name                = "${var.instance_name}-nic"       # Nombre de la interfaz de red basado en `instance_name`.
+  name                = "${var.azure_instance_name}-nic"       # Nombre de la interfaz de red basado en `instance_name`.
   location            = azurerm_resource_group.example_rg[0].location # Ubicación de la interfaz de red (mismo lugar que el grupo de recursos).
   resource_group_name = azurerm_resource_group.example_rg[0].name      # Grupo de recursos asociado.
   ip_configuration {
@@ -270,7 +270,7 @@ resource "azurerm_virtual_machine" "example_vm" {
   ## IMPORTANTE--> Condicion para desplegar en AZURE, si al hacer el terraform apply el valor del target es azure o both, se desplegara en azure
   count = var.deployment_target == "azure" || var.deployment_target == "both" ? 1 : 0
 
-  name                  = "${var.instance_name}-vm" # Nombre de la máquina virtual basado en `instance_name`.
+  name                  = "${var.azure_instance_name}-vm" # Nombre de la máquina virtual basado en `instance_name`.
   location              = azurerm_resource_group.example_rg[0].location # Ubicación de la máquina virtual (mismo lugar que el grupo de recursos).
   resource_group_name   = azurerm_resource_group.example_rg[0].name      # Grupo de recursos asociado.
   network_interface_ids = [azurerm_network_interface.example_nic[0].id] # Asocia la interfaz de red configurada previamente.
@@ -278,7 +278,7 @@ resource "azurerm_virtual_machine" "example_vm" {
 
   # Configuración del disco del sistema operativo.
   storage_os_disk {
-    name              = "${var.instance_name}-osdisk"  # Nombre del disco del sistema operativo basado en `instance_name`.
+    name              = "${var.azure_instance_name}-osdisk"  # Nombre del disco del sistema operativo basado en `instance_name`.
     caching           = "ReadWrite"                   # Configuración de caché para el disco.
     create_option     = "FromImage"                   # Indica que el disco se crea a partir de una imagen existente.
     managed_disk_type = "Standard_LRS"                # Tipo de disco administrado.
@@ -291,7 +291,7 @@ resource "azurerm_virtual_machine" "example_vm" {
 
   # Configuración del perfil del sistema operativo.
   os_profile {
-    computer_name  = "${var.instance_name}"          # Nombre del equipo (máquina virtual).
+    computer_name  = "${var.azure_instance_name}"          # Nombre del equipo (máquina virtual).
     admin_username = var.azure_admin_username       # Usuario administrador para la conexión.
     admin_password = var.azure_admin_password       # Contraseña para el usuario administrador.
   }
@@ -334,19 +334,11 @@ output "azure_vm_ip" {
 ####################################################################################################
 
 # DESPLEGAR TERRAFORM
-# terraform init --> Inicializa el directorio de trabajo
-# terraform plan -var "aws_access_key=$env:PKR_VAR_aws_access_key" `  -var "aws_secret_key=$env:PKR_VAR_aws_secret_key" `  -var "aws_session_token=$env:PKR_VAR_aws_session_token" --> Muestra los cambios que se realizarán
-# terraform apply -var "aws_access_key=$env:PKR_VAR_aws_access_key" `  -var "aws_secret_key=$env:PKR_VAR_aws_secret_key" `  -var "aws_session_token=$env:PKR_VAR_aws_session_token"--> Aplica los cambios y despliega la infraestructura
-# terraform destroy -var "aws_access_key=$env:PKR_VAR_aws_access_key" `  -var "aws_secret_key=$env:PKR_VAR_aws_secret_key" `  -var "aws_session_token=$env:PKR_VAR_aws_session_token" --> Elimina la infraestructura creada
-
 
 # Get-ChildItem Env: | Where-Object { $_.Name -like "PKR_VAR_*" } --> ver credenciales actuales de AWS en la consola de powershell
 # Get-ChildItem Env: | Where-Object { $_.Name -like "ARM_*" } --> ver credenciales actuales DE AZURE en la consola de powershell
 
-# terraform apply -var "deployment_target=aws" ` -var "aws_access_key=$env:PKR_VAR_aws_access_key" ` -var "aws_secret_key=$env:PKR_VAR_aws_secret_key" ` -var "aws_session_token=$env:PKR_VAR_aws_session_token"
-
-
-#  terraform apply "deployment_target=aws" -var "aws_access_key=$env:PKR_VAR_aws_access_key" -var "aws_secret_key=$env:PKR_VAR_aws_secret_key" -var "aws_session_token=$env:PKR_VAR_aws_session_token" -var "azure_subscription_id=$env:ARM_SUBSCRIPTION_ID" -var "azure_client_id=$env:ARM_CLIENT_ID" -var "azure_client_secret=$env:ARM_CLIENT_SECRET" -var "azure_tenant_id=$env:ARM_TENANT_ID"
-
 ######## EL BUENO
-# terraform apply -var "deployment_target=aws" ` -var "aws_access_key=$env:PKR_VAR_aws_access_key" ` -var "aws_secret_key=$env:PKR_VAR_aws_secret_key" ` -var "aws_session_token=$env:PKR_VAR_aws_session_token" ` -var "azure_subscription_id=$env:ARM_SUBSCRIPTION_ID" ` -var "azure_client_id=$env:ARM_CLIENT_ID" ` -var "azure_client_secret=$env:ARM_CLIENT_SECRET" ` -var "azure_tenant_id=$env:ARM_TENANT_ID"
+# terraform init --> Inicializa el directorio de trabajo
+# terraform apply -var "deployment_target=azure" ` -var "aws_access_key=$env:PKR_VAR_aws_access_key" ` -var "aws_secret_key=$env:PKR_VAR_aws_secret_key" ` -var "aws_session_token=$env:PKR_VAR_aws_session_token" ` -var "azure_subscription_id=$env:ARM_SUBSCRIPTION_ID" ` -var "azure_client_id=$env:ARM_CLIENT_ID" ` -var "azure_client_secret=$env:ARM_CLIENT_SECRET" ` -var "azure_tenant_id=$env:ARM_TENANT_ID"
+# terraform destroy -var "deployment_target=aws" ` -var "aws_access_key=$env:PKR_VAR_aws_access_key" ` -var "aws_secret_key=$env:PKR_VAR_aws_secret_key" ` -var "aws_session_token=$env:PKR_VAR_aws_session_token" ` -var "azure_subscription_id=$env:ARM_SUBSCRIPTION_ID" ` -var "azure_client_id=$env:ARM_CLIENT_ID" ` -var "azure_client_secret=$env:ARM_CLIENT_SECRET" ` -var "azure_tenant_id=$env:ARM_TENANT_ID"

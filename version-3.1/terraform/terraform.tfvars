@@ -11,6 +11,7 @@ key_name       = "unir" # Nombre del par de claves para acceder a la instancia
 
 ######### COMPARTIDOS ENTRE LOS DOS
 instance_name  = "Instance_Node_Nginx"
+azure_instance_name = "Instance-Node-Nginx"
 
 
 ######### AZURE
@@ -19,7 +20,7 @@ instance_name  = "Instance_Node_Nginx"
 # azure_client_secret   = "your-secret-value"
 # azure_tenant_id       = "12345678-1234-1234-1234-123456789abc"
 azure_region          = "East US"
-azure_instance_type   = "Standard_B1ms"
+azure_instance_type   = "Standard_B1ls"
 azure_admin_username  = "adminuser"
 azure_admin_password  = "P@ssw0rd123"
 azure_image_name      = "custom-azure-image"

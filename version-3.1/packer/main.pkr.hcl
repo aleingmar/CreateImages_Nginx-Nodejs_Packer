@@ -90,20 +90,22 @@ source "amazon-ebs" "aws_builder" {
 # AZURE BUILDER
 #######################################################################################################################
 source "azure-arm" "azure_builder" {
-  subscription_id = var.azure_subscription_id
-  client_id       = var.azure_client_id
-  client_secret   = var.azure_client_secret
-  tenant_id       = var.azure_tenant_id
+  subscription_id                = var.azure_subscription_id
+  client_id                      = var.azure_client_id
+  client_secret                  = var.azure_client_secret
+  tenant_id                      = var.azure_tenant_id
 
-  managed_image_name                = var.azure_image_name
+  managed_image_name             = var.azure_image_name
   managed_image_resource_group_name = var.azure_resource_group_name
-  #managed_image_resource_group_name=  "${var.instance_name}-rg"
-  location                          = var.azure_region
+  location                       = var.azure_region
+  ssh_username = "ubuntu"
 
-  os_type     = "Linux"
-  image_publisher = "Canonical"
-  image_offer     = "UbuntuServer"
-  image_sku       = "20.04-LTS"
+  vm_size                        = var.azure_instance_type # instancia equivalente a t2.micro de aws
+  os_type                        = "Linux"
+  image_publisher                = "Canonical"
+  image_offer                    = "UbuntuServer"
+  image_sku                      = "18.04-LTS" # Cambia al SKU disponible
+  image_version                  = "latest"
   azure_tags = {
     environment = var.environment
   }

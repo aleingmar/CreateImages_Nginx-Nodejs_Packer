@@ -74,3 +74,5 @@ variable "azure_admin_username" {
 variable "azure_admin_password" { description = "Admin password for Azure VM" }
 variable "azure_image_name" { description = "Name of the Azure image created by Packer" }
 variable "azure_resource_group_name" { description = "Name of the Azure resource group" }
+variable "azure_instance_name" { description = "Name of the Azure instance" }
+
