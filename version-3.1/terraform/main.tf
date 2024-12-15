@@ -421,5 +421,5 @@ output "azure_public_ip" {
 
 ######## EL BUENO
 # terraform init --> Inicializa el directorio de trabajo
-# terraform apply -var "deployment_target=azure" ` -var "aws_access_key=$env:PKR_VAR_aws_access_key" ` -var "aws_secret_key=$env:PKR_VAR_aws_secret_key" ` -var "aws_session_token=$env:PKR_VAR_aws_session_token" ` -var "azure_subscription_id=$env:ARM_SUBSCRIPTION_ID" ` -var "azure_client_id=$env:ARM_CLIENT_ID" ` -var "azure_client_secret=$env:ARM_CLIENT_SECRET" ` -var "azure_tenant_id=$env:ARM_TENANT_ID"
+# terraform apply -var "deployment_target=both" ` -var "aws_access_key=$env:PKR_VAR_aws_access_key" ` -var "aws_secret_key=$env:PKR_VAR_aws_secret_key" ` -var "aws_session_token=$env:PKR_VAR_aws_session_token" ` -var "azure_subscription_id=$env:ARM_SUBSCRIPTION_ID" ` -var "azure_client_id=$env:ARM_CLIENT_ID" ` -var "azure_client_secret=$env:ARM_CLIENT_SECRET" ` -var "azure_tenant_id=$env:ARM_TENANT_ID"
 # terraform destroy -var "deployment_target=aws" ` -var "aws_access_key=$env:PKR_VAR_aws_access_key" ` -var "aws_secret_key=$env:PKR_VAR_aws_secret_key" ` -var "aws_session_token=$env:PKR_VAR_aws_session_token" ` -var "azure_subscription_id=$env:ARM_SUBSCRIPTION_ID" ` -var "azure_client_id=$env:ARM_CLIENT_ID" ` -var "azure_client_secret=$env:ARM_CLIENT_SECRET" ` -var "azure_tenant_id=$env:ARM_TENANT_ID"
