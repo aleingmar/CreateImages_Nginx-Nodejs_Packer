@@ -230,6 +230,41 @@ resource "azurerm_virtual_network" "example_vnet" {
 }
 
 ####################################################################################################
+# CONFIGURACIÓN DE GRUPO DE SEGURIDAD PARA LA MÁQUINA VIRTUAL EN AZURE
+####################################################################################################
+resource "azurerm_network_security_group" "example_nsg" {
+  count = var.deployment_target == "azure" || var.deployment_target == "both" ? 1 : 0
+  name                = "${var.azure_instance_name}-nsg"
+  location            = azurerm_resource_group.example_rg[0].location
+  resource_group_name = azurerm_resource_group.example_rg[0].name
+
+  security_rule {
+    name                       = "SSH"
+    priority                   = 1001
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "HTTP"
+    priority                   = 1002
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "80"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+}
+
+
+####################################################################################################
 # CONFIGURACIÓN DE LA SUBRED PARA LA MÁQUINA VIRTUAL EN AZURE
 ####################################################################################################
 # Configura una subred dentro de la red virtual para conectar la máquina virtual.
@@ -240,6 +275,23 @@ resource "azurerm_subnet" "example_subnet" {
   resource_group_name  = azurerm_resource_group.example_rg[0].name # Grupo de recursos asociado.
   virtual_network_name = azurerm_virtual_network.example_vnet[0].name # Nombre de la red virtual a la que pertenece esta subred.
   address_prefixes     = ["10.0.1.0/24"]                # Rango de direcciones IP asignado a esta subred.
+  
+}
+# Configura una IP pública para la máquina virtual en Azure.
+# resource "azurerm_public_ip" "example_public_ip" {
+#   count               = var.deployment_target == "azure" || var.deployment_target == "both" ? 1 : 0
+#   name                = "${var.azure_instance_name}-public-ip"
+#   location            = azurerm_resource_group.example_rg[0].location
+#   resource_group_name = azurerm_resource_group.example_rg[0].name
+#   allocation_method   = "Dynamic" # Usa una IP pública dinámica
+# }
+resource "azurerm_public_ip" "example_public_ip" {
+  count               = var.deployment_target == "azure" || var.deployment_target == "both" ? 1 : 0
+  name                = "${var.azure_instance_name}-public-ip"
+  location            = azurerm_resource_group.example_rg[0].location
+  resource_group_name = azurerm_resource_group.example_rg[0].name
+  allocation_method   = "Static" # Cambia de Dynamic a Static
+  sku                 = "Standard" # Mantén el SKU Standard si lo estás utilizando
 }
 
 ####################################################################################################
@@ -252,12 +304,21 @@ resource "azurerm_network_interface" "example_nic" {
   name                = "${var.azure_instance_name}-nic"       # Nombre de la interfaz de red basado en `instance_name`.
   location            = azurerm_resource_group.example_rg[0].location # Ubicación de la interfaz de red (mismo lugar que el grupo de recursos).
   resource_group_name = azurerm_resource_group.example_rg[0].name      # Grupo de recursos asociado.
+  
   ip_configuration {
     name                          = "internal"           # Nombre del perfil de configuración IP.
     subnet_id                     = azurerm_subnet.example_subnet[0].id # Subred a la que pertenece esta interfaz.
     private_ip_address_allocation = "Dynamic"            # Asigna dinámicamente una dirección IP privada.
+    public_ip_address_id          = azurerm_public_ip.example_public_ip[0].id # Asocia la IP pública aquí
   }
+  
 }
+# Asocia la interfaz de red con el grupo de seguridad de red.
+resource "azurerm_network_interface_security_group_association" "example" {
+  network_interface_id      = azurerm_network_interface.example_nic[0].id
+  network_security_group_id = azurerm_network_security_group.example_nsg[0].id
+}
+
 
 ####################################################################################################
 # CONFIGURACIÓN DE LA MÁQUINA VIRTUAL EN AZURE
@@ -288,7 +349,7 @@ resource "azurerm_virtual_machine" "example_vm" {
   storage_image_reference {
     id = data.azurerm_image.latest_azure_image[0].id     # Utiliza la imagen recuperada en el bloque `data.azurerm_image`.
   }
-
+  ################## CONFIGURACION PARA ACCEDER POR CONTRASEÑA EN VEZ DE USAR PAR DE CLAVES (recomendado pero mas lio)
   # Configuración del perfil del sistema operativo.
   os_profile {
     computer_name  = "${var.azure_instance_name}"          # Nombre del equipo (máquina virtual).
@@ -326,6 +387,11 @@ output "azure_vm_id" {
 output "azure_vm_ip" {
   value       = length(azurerm_network_interface.example_nic) > 0 ? azurerm_network_interface.example_nic[0].private_ip_address : null
   description = "IP privada de la máquina virtual en Azure si existe"
+}
+
+output "azure_public_ip" {
+  value = length(azurerm_public_ip.example_public_ip) > 0 ? azurerm_public_ip.example_public_ip[0].ip_address : null
+  description = "IP pública de la máquina virtual en Azure si existe"
 }
 
 
