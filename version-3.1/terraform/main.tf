@@ -21,6 +21,7 @@ provider "azurerm" {
 ####################################################################################################
 ####################################################################################################
 ####################################################################################################
+# IMPORTANTE --> VARIABLE COUNT
 # count es una variable que te dice el numero de recursos a levantar en los tipo RESOURCES--> si es uno levantara 1 y si es 0, pues 0. (si fuese 3 levantaria 3 recursos)
 # cuando se usa count, se debe usar el indice para acceder a los recursos, por ejemplo aws_instance.web_server[0].id
 
@@ -34,6 +35,7 @@ resource "null_resource" "packer_ami" {
   # local-exec ejecuta un comando en la máquina que ejecuta Terraform.
   provisioner "local-exec" {
     # Este comando invoca Packer para construir una AMI personalizada usando las variables y configuraciones proporcionadas.
+    # usa solo ese provisioner y builder comandos-cloud-node-nginx.amazon-ebs.aws_builder
     command = "packer build -only=comandos-cloud-node-nginx.amazon-ebs.aws_builder -var aws_access_key=${var.aws_access_key} -var aws_secret_key=${var.aws_secret_key} -var aws_session_token=${var.aws_session_token} -var-file=..\\packer\\variables.pkrvars.hcl ..\\packer\\main.pkr.hcl"
   }
 }
