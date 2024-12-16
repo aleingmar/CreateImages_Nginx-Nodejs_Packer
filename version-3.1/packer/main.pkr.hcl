@@ -1,3 +1,8 @@
+# Plantilla de Packer para crear una imagen para AWS con Ubuntu 20.04, Nginx y Node.js
+
+########################################################################################################################
+# PLUGINS: Define los plugins necesarios para la plantilla
+# Para descargar el plugin necesario para la plantilla, levantar la imagen en Azure y aws
 packer {
   required_plugins {
     amazon = {
@@ -65,11 +70,19 @@ variable "azure_tenant_id" {
 #######################################################################################################################
 # AWS BUILDER
 #######################################################################################################################
+# BUILDER: Define cómo se construye la AMI en AWS y azure
+# source{}--> define el sistema base sobre el que quiero crear la imagen (ISO ubuntu) y el proveeedor para el que creamos la imagen 
+# (tecnologia con la que desplegará la imagen) --> AMAZON y azure
 source "amazon-ebs" "aws_builder" {
   access_key    = var.aws_access_key
   secret_key    = var.aws_secret_key
   token         = var.aws_session_token
   region        = var.aws_region
+  ## OPCION 1 --> Seleccionar una AMI específica
+  #source_ami = "ami-095a8f574cb0ac0d0" # AMI de Ubuntu 20.04 LTS
+
+  ## OPCION 2 --> Seleccionar la AMI más reciente
+  # Esto busca la AMI más reciente de Ubuntu 20.04 con las caracteristicas especificadas (región especificada,ebs...)
 
   source_ami_filter {
     filters = {
@@ -77,16 +90,16 @@ source "amazon-ebs" "aws_builder" {
       root-device-type    = "ebs"
       virtualization-type = "hvm"
     }
-    owners      = ["099720109477"]
+    owners      = ["099720109477"] # Propietario de las AMIs de Ubuntu (Canonical)
     most_recent = true
   }
 
-  instance_type = var.instance_type
-  ssh_username  = "ubuntu"
+  instance_type = var.instance_type # Instancia recomendada para AMIs de Ubuntu (t2.micro), esta en el fichero de variables
+  ssh_username  = "ubuntu" # Usuario predeterminado en AMIs de Ubuntu
   ami_name      = var.ami_name
 
   tags = {
-    Name = "Packer-Builder"
+    Name = "Packer-Builder" # Nombre descriptivo para la instancia Packer.
   }
 }
 
@@ -119,6 +132,8 @@ source "azure-arm" "azure_builder" {
 #######################################################################################################################
 # PROVISIONERS (SAME FOR BOTH CLOUD (AWS AND AZURE))
 #######################################################################################################################
+# PROVISIONERS: Configura el sistema operativo y la aplicación
+# build{}: Describe cómo se construirá la imagen --> Definir los provisioners para instalar y configurar software
 build {
   name    = "comandos-cloud-node-nginx"
   #sources = ["source.amazon-ebs.aws_builder", "source.azure-arm.azure_builder"]
@@ -175,7 +190,8 @@ build {
     ]
   }
 }
-####3
+#######################################################################3
+# PROVISIONER para Azure usamos Ansible
 
 build {
   name    = "ansible-cloud-node-nginx"
@@ -187,7 +203,7 @@ build {
       "sudo apt install -y ansible"
     ]
   }
-  provisioner "file" {
+  provisioner "file" { # Pasamos los ficheros a la instancia para que ansible los puedo manipular (ansible esta en la instancia)
   source      = "../packer/provisioners/app.js"
   destination = "/tmp/app.js"
 }

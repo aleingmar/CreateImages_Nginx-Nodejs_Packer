@@ -2,8 +2,7 @@
 
 ########################################################################################################################
 # PLUGINS: Define los plugins necesarios para la plantilla
-# Para descargar el plugin necesario para la plantilla, levantar la imagen en VirtualBox
-# se puede instalar tambien directamente con # packer plugins install github.com/hashicorp/virtualbox
+# Para descargar el plugin necesario para la plantilla, levantar la imagen en AWS
 
 packer {
   required_plugins {
