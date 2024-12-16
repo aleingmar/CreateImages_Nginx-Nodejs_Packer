@@ -134,6 +134,7 @@ resource "aws_security_group" "web_server_sg" {
 ###################################################
 # GENERA EL PAR DE CLAVES Y SE LO PASA A AWS
 ##################################################
+# no almacenamos las claves, no podriamos usarlas para conectarnos por ssh a la instancia 
 # Generar un par de claves SSH automáticamente
 resource "tls_private_key" "ssh_key" {
   algorithm = "RSA"
